@@ -1,0 +1,1 @@
+﻿I know this is mostly pointless, and that I'm sure that libraries exist. Consider it a learning exercise.
