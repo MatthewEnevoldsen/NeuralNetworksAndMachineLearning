@@ -6,9 +6,7 @@ using System.Threading.Tasks;
 
 namespace EncogPlayground.TicTacToe
 {
-    public class TicTacToeGame
+    public class TicTacToeDataGenerator
     {
-        public TicTacToeBoard Board;
-        public 
     }
 }
