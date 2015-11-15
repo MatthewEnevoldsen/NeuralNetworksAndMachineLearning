@@ -82,17 +82,12 @@
   </Choose>
   <ItemGroup>
     <Compile Include="Program.cs" />
-    <Compile Include="TicTacToe\GameSimulator.cs" />
-    <Compile Include="TicTacToe\RandomPlayer.cs" />
-    <Compile Include="TicTacToe\ResetableMoveTracker.cs" />
-    <Compile Include="TicTacToe\TicTacToeBrain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TicTacToe\TicTacToeDataGenerator.cs" />
-    <Compile Include="TicTacToe\TicTacToeBindings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
       <ItemGroup>
