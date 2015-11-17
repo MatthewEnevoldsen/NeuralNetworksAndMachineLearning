@@ -11,9 +11,9 @@ namespace TicTacToe
     {
         public IEnumerable<Point> GetEmptySquares(IGrid grid)
         {
-            for (int x = 0; x < grid.Tiles.GetLength(0); x++)
-                for (int y = 0; y < grid.Tiles.GetLength(1); y++)
-                    if (grid.Tiles[x, y].Content != TileContent.Empty)
+            for (int x = 0; x < grid.Size; x++)
+                for (int y = 0; y < grid.Size; y++)
+                    if (grid[x, y].Content != TileContent.Empty)
                         yield return new Point(x, y);
         }
     }

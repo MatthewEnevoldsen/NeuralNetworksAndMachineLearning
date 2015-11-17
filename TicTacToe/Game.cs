@@ -34,7 +34,8 @@ namespace TicTacToe
         public GameResults PerformMove()
         {
             var move = PlayerTracker.CurrentPlayer.GetMove(Grid);
-            Grid.Tiles[move.Pos.X, move.Pos.Y].PlacePiece(move.Piece);
+            //move validator?
+            Grid[move.Pos].PlacePiece(move.Piece);
             if (_tieDetector.IsGameTied(Grid))
                 return new GameResults() { IsFinished = true, Winner = null };
             if (_winDetector.GetWinner(Grid) != null)

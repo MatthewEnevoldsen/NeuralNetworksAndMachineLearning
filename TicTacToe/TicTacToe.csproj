@@ -50,9 +50,11 @@
   <ItemGroup>
     <Compile Include="Game.cs" />
     <Compile Include="GameResults.cs" />
+    <Compile Include="Grid.cs" />
     <Compile Include="IGame.cs" />
     <Compile Include="IGrid.cs" />
     <Compile Include="ISwitcher.cs" />
+    <Compile Include="ITileFactory.cs" />
     <Compile Include="Move.cs" />
     <Compile Include="IMoveFactory.cs" />
     <Compile Include="IPlayer.cs" />
