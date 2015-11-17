@@ -67,6 +67,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Switcher.cs" />
     <Compile Include="TieDectector.cs" />
+    <Compile Include="TieDetector.cs" />
     <Compile Include="Tile.cs" />
     <Compile Include="TileContent.cs" />
     <Compile Include="ValidMoveGetter.cs" />

@@ -121,9 +121,93 @@ namespace EncogPlaygroundTests.TicTacToeTests
                 tf.Setup(t => t.Create()).Returns(tileMock.Object);
                 var grid = new Grid(tf.Object);
 
-                grid.PlacePiece(new Move(new Point(0, 0), Piece.X));   
-                             
+                grid.PlacePiece(new Move(new Point(0, 0), Piece.X));
+
                 tileMock.Verify(t => t.PlacePiece(Piece.X));
+            }
+        }
+
+        private static IMock<IGrid> GetMockedGrid(IEnumerable<Point> xs, IEnumerable<Point> os)
+        {
+            var grid = new Mock<IGrid>();
+            grid.SetupGet(g => g.Size).Returns(3);
+            for (int x = 0; x < 3; x++)
+            {
+                for (int y = 0; y < 3; y++)
+                {
+                    var pos = new Point(x, y);
+                    var tile = new Mock<ITile>();
+                    tile.SetupGet(t => t.Content).Returns(xs.Contains(pos) ? Piece.X : os.Contains(pos) ? Piece.O : TileContent.Empty);
+                    grid.SetupGet(g => g[x, y]).Returns(tile.Object);
+                    grid.SetupGet(g => g[new Point(x, y)]).Returns(tile.Object);
+                }
+            }
+            return grid;
+        }
+
+        [TestClass]
+        public class WinDectectorShould
+        {
+            private IWinDetector GetDetector()
+            {
+                return new WinDectector();
+            }
+
+            private void EnsureResult(IEnumerable<Point> xs, IEnumerable<Point> os, Piece winner)
+            {
+                var grid = GetMockedGrid(xs, os);
+                Assert.AreEqual(winner, GetDetector().GetWinner(grid.Object));
+            }
+
+            private void Ensure3PointsDetected(Point p1, Point p2, Point p3)
+            {
+                EnsureResult(new[] { p1, p2, p3 }, new Point[] { }, Piece.X);
+                EnsureResult(new Point[] { }, new[] { p1, p2, p3 }, Piece.O);
+            }
+
+            [TestMethod]
+            public void DetectTopLine()
+            {
+                Ensure3PointsDetected(new Point(0, 0), new Point(0, 1), new Point(0, 2));
+            }
+            [TestMethod]
+            public void DetectHorMiddleLine()
+            {
+                Ensure3PointsDetected(new Point(1, 0), new Point(1, 1), new Point(1, 2));
+            }
+            [TestMethod]
+            public void DetectDiag()
+            {
+                Ensure3PointsDetected(new Point(0, 0), new Point(1, 1), new Point(2, 2));
+            }
+            [TestMethod]
+            public void DetectReversDiag()
+            {
+                Ensure3PointsDetected(new Point(2, 0), new Point(1, 1), new Point(0, 2));
+            }
+            [TestMethod]
+            public void NotCountBlockedRunsAsWinner()
+            {
+                EnsureResult(new[] { new Point(0, 0), new Point(1, 0) }, new[] { new Point(2, 0) }, null);
+            }
+        }
+
+        [TestClass]
+        public class TieDetectorShould
+        {
+            private ITieDetector GetDetector()
+            {
+                return new TieDetector();
+            }
+
+            [TestMethod]
+            public void RequireAllTilesToBeFilled()
+            {
+                var grid = new Mock<IGrid>();
+                var tile = new Mock<ITile>();
+                tile.Setup(t => t.Content).Returns(Piece.X);
+                grid.Setup(g => g.GetEnumerator()).Returns(tile.Object);
+                Assert.IsTrue(GetDetector().IsGameTied(grid.Object));
             }
         }
     }
