@@ -10,50 +10,37 @@ namespace TicTacToe
     {
         private IWinDetector _winDetector;
         private ITieDetector _tieDetector;
+        private ISwitcher _switcher;
 
-        public Game(IGameState state, IPlayer playerOne, IPlayer playerTwo, IWinDetector winDetector, ITieDetector tieDetector)
+        public Game(ISwitcher switcher, IWinDetector winDetector, ITieDetector tieDetector)
         {
-            State = state;
-            Winner = null;
-            IsFinished = false;
             _winDetector = winDetector;
             _tieDetector = tieDetector;
+            _switcher = switcher;
+            PlayerTracker = new PlayerTracker();//how to feed players...
+            Grid = null;// set how?
         }
 
-        public bool IsFinished
+        public IGrid Grid
         {
             get; private set;
         }
 
-        public IPlayer Winner
+        public PlayerTracker PlayerTracker
         {
             get; private set;
-
         }
 
-        public IGameState State
+        public GameResults PerformMove()
         {
-            get; private set;
-        }       
-
-        public void PerformMove()
-        {
-            var move = State.PlayerTracker.CurrentPlayer.GetMove(State);
-            State.Grid.Tiles[move.Pos.X, move.Pos.Y].PlacePiece(move.Piece);
-            State.PlayerTracker.SwitchPlayers();
-            if (_tieDetector.IsGameTied(State))
-                IsFinished = true;
-            Winner = _winDetector.GetWinner(State);
-            if (Winner != null)
-                IsFinished = true;
-        }
-
-
-        public IPlayer PlayGame()
-        {
-            while (!IsFinished)
-                PerformMove();
-            return Winner;
+            var move = PlayerTracker.CurrentPlayer.GetMove(Grid);
+            Grid.Tiles[move.Pos.X, move.Pos.Y].PlacePiece(move.Piece);
+            if (_tieDetector.IsGameTied(Grid))
+                return new GameResults() { IsFinished = true, Winner = null };
+            if (_winDetector.GetWinner(Grid) != null)
+                return new GameResults() { IsFinished = true, Winner = PlayerTracker.CurrentPlayer };
+            _switcher.Switch(ref PlayerTracker.CurrentPlayer, ref PlayerTracker.NextPlayer);
+            return new GameResults() { IsFinished = false, Winner = null };
         }
     }
 }

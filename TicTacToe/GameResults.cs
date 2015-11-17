@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace TicTacToe
 {
-    public interface IGameResults
+    public class GameResults
     {
-        IPlayer Winner { get; set; }
+        public bool IsFinished { get; set; }
+        public IPlayer Winner { get; set; }
     }
 }

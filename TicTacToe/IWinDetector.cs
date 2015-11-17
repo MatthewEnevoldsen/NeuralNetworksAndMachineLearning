@@ -8,6 +8,6 @@ namespace TicTacToe
 {
     public interface IWinDetector
     {
-        IPlayer GetWinner(IGameState state);
+        Piece GetWinner(IGrid grid);
     }
 }

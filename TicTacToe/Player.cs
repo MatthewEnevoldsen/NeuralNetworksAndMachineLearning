@@ -8,15 +8,15 @@ namespace TicTacToe
 {
     public class Player : IPlayer
     {
-        private IGameState _state;
         private IValidMoveGetter _moveGetter;
+        private IMoveFactory _moveFact;
 
-        public Player(string name, Piece piece, IGameState state, IValidMoveGetter moveGetter)
+        public Player(string name, Piece piece, IValidMoveGetter moveGetter, IMoveFactory moveFactory)
         {
             Name = name;
             Piece = piece;
-            _state = state;
             _moveGetter = moveGetter;
+            _moveFact = moveFactory;
         }
 
         public string Name
@@ -29,10 +29,9 @@ namespace TicTacToe
             get; private set;
         }
 
-        public void PerformMove()
+        public Move GetMove(IGrid grid)
         {
-            var move = _moveGetter.GetMoves().First();
-            _state.Grid.Tiles[move.Pos.X, move.Pos.Y].PlacePiece(move.Piece);
+            return _moveFact.CreateMove(_moveGetter.GetEmptySquares(grid).First(), Piece);
         }
     }
 }

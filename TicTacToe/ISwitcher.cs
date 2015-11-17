@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace TicTacToe
 {
-    public interface IPlayerTracker
+    public interface ISwitcher
     {
-        IPlayer CurrentPlayer { get; }
-        IPlayer NextPlayer { get; }
+        void Switch<T>(ref T item1, ref T item2);
     }
 }

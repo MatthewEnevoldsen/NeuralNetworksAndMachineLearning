@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace TicTacToe
 {
-    public interface IGameState
+    public class PlayerTracker
     {
-        IGrid Grid { get; }
-        IPlayerTracker PlayerTracker { get; }
+        public IPlayer CurrentPlayer;
+        public IPlayer NextPlayer;
     }
 }

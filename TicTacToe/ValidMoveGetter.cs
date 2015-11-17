@@ -9,23 +9,12 @@ namespace TicTacToe
 {
     public class ValidMoveGetter : IValidMoveGetter
     {
-        private IGameState _state;
-        private IMoveFactory _moveFactory;
-        private IPlayerTracker _playerTracker;
-
-        public ValidMoveGetter(IGameState state, IMoveFactory moveFactory, IPlayerTracker playerTracker)
+        public IEnumerable<Point> GetEmptySquares(IGrid grid)
         {
-            _state = state;
-            _moveFactory = moveFactory;
-            _playerTracker = playerTracker;
-        }
-
-        public IEnumerable<Move> GetMoves()
-        {
-            for (int x = 0; x < _state.Grid.Tiles.GetLength(0); x++)
-                for (int y = 0; y < _state.Grid.Tiles.GetLength(1); y++)
-                    if (_state.Grid.Tiles[x, y].Content != TileContent.Empty)
-                        yield return _moveFactory.CreateMove(new Point(x, y), _playerTracker.CurrentPlayer.Piece);
+            for (int x = 0; x < grid.Tiles.GetLength(0); x++)
+                for (int y = 0; y < grid.Tiles.GetLength(1); y++)
+                    if (grid.Tiles[x, y].Content != TileContent.Empty)
+                        yield return new Point(x, y);
         }
     }
 }

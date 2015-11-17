@@ -8,10 +8,8 @@ namespace TicTacToe
 {
     public interface IGame
     {
-        IGameState State { get; }
-        IFinishedGame PlayGame();
-        void PerformMove();
-        bool IsFinished { get; }
-        IPlayer Winner { get; }
+        IGrid Grid { get; }
+        PlayerTracker PlayerTracker { get; }
+        GameResults PerformMove();
     }
 }

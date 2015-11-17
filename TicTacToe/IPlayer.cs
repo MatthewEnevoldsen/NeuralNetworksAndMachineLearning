@@ -10,6 +10,6 @@ namespace TicTacToe
     {
         string Name { get; }
         Piece Piece { get; }
-        void PerformMove();
+        Move GetMove(IGrid grid);
     }
 }

@@ -8,6 +8,6 @@ namespace TicTacToe
 {
     public interface ITieDetector
     {
-        bool IsGameTied(IGameState state);
+        bool IsGameTied(IGrid grid);
     }
 }
