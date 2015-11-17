@@ -12,5 +12,6 @@ namespace TicTacToe
         ITile this[Point pos] { get; }
         ITile this[int x, int y] { get; }
         int Size { get; }
+        void PlacePiece(Move move);
     }
 }

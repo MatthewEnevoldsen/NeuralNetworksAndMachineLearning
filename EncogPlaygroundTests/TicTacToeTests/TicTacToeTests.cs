@@ -4,6 +4,8 @@ using TicTacToe;
 using Moq;
 using System.Linq;
 using System.Drawing;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace EncogPlaygroundTests.TicTacToeTests
 {
@@ -75,6 +77,11 @@ namespace EncogPlaygroundTests.TicTacToeTests
                 return new Grid(tf.Object);
             }
 
+            private IEnumerable<Point> GetPoints()
+            {
+                return Enumerable.Range(0, Grid.SIZE).SelectMany(x => Enumerable.Range(0, Grid.SIZE).Select(y => new Point(x, y)));
+            }
+
             [TestMethod]
             public void CreateTiles()
             {
@@ -86,7 +93,7 @@ namespace EncogPlaygroundTests.TicTacToeTests
             public void PointIndexerShouldHitEverything()
             {
                 var grid = GetGrid();
-                foreach (var p1 in Enumerable.Range(0, Grid.SIZE).SelectMany(x => Enumerable.Range(0, Grid.SIZE).Select(y => new Point(x, y))))
+                foreach (var p1 in GetPoints())
                     Assert.IsTrue(grid.Contains(grid[p1]));
             }
 
@@ -94,7 +101,7 @@ namespace EncogPlaygroundTests.TicTacToeTests
             public void IntIntIndexerShouldHitEverything()
             {
                 var grid = GetGrid();
-                foreach (var p1 in Enumerable.Range(0, Grid.SIZE).SelectMany(x => Enumerable.Range(0, Grid.SIZE).Select(y => new Point(x, y))))
+                foreach (var p1 in GetPoints())
                     Assert.IsTrue(grid.Contains(grid[p1.X, p1.Y]));
 
             }
@@ -104,6 +111,19 @@ namespace EncogPlaygroundTests.TicTacToeTests
             {
                 var grid = GetGrid();
                 Assert.AreEqual(grid.Size * grid.Size, grid.Count());
+            }
+
+            [TestMethod]
+            public void ShouldPlacePiece()
+            {
+                var tileMock = new Mock<ITile>();
+                var tf = new Mock<ITileFactory>();
+                tf.Setup(t => t.Create()).Returns(tileMock.Object);
+                var grid = new Grid(tf.Object);
+
+                grid.PlacePiece(new Move(new Point(0, 0), Piece.X));   
+                             
+                tileMock.Verify(t => t.PlacePiece(Piece.X));
             }
         }
     }

@@ -51,6 +51,11 @@ namespace TicTacToe
             return _tiles.Cast<ITile>().GetEnumerator();
         }
 
+        public void PlacePiece(Move move)
+        {
+            this[move.Pos].PlacePiece(move.Piece);
+        }
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return ((IEnumerable<ITile>)this).GetEnumerator();
