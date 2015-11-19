@@ -13,7 +13,7 @@ namespace TicTacToe
         {
             for (int x = 0; x < grid.Size; x++)
                 for (int y = 0; y < grid.Size; y++)
-                    if (grid[x, y].Content != TileContent.Empty)
+                    if (grid[x, y].Content == TileContent.Empty)
                         yield return new Point(x, y);
         }
     }

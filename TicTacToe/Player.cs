@@ -6,17 +6,16 @@ using System.Threading.Tasks;
 
 namespace TicTacToe
 {
-    public class Player : IPlayer
+    public class RandomPlayer : IPlayer
     {
         private IValidMoveGetter _moveGetter;
-        private IMoveFactory _moveFact;
+        private static Random rand = new Random(100);
 
-        public Player(string name, Piece piece, IValidMoveGetter moveGetter, IMoveFactory moveFactory)
+        public RandomPlayer(string name, Piece piece, IValidMoveGetter moveGetter)
         {
             Name = name;
             Piece = piece;
             _moveGetter = moveGetter;
-            _moveFact = moveFactory;
         }
 
         public string Name
@@ -31,7 +30,38 @@ namespace TicTacToe
 
         public Move GetMove(IGrid grid)
         {
-            return _moveFact.CreateMove(_moveGetter.GetEmptySquares(grid).First(), Piece);
+            var moves = _moveGetter.GetEmptySquares(grid).ToArray();
+            var skip = rand.Next(0, moves.Count());
+            return new Move(moves.Skip(skip).First(), Piece);
+        }
+    }
+
+    public class FirstPlayer : IPlayer
+    {
+        private IValidMoveGetter _moveGetter;
+        private static Random rand = new Random(100);
+
+        public FirstPlayer(string name, Piece piece, IValidMoveGetter moveGetter)
+        {
+            Name = name;
+            Piece = piece;
+            _moveGetter = moveGetter;
+        }
+
+        public string Name
+        {
+            get; private set;
+        }
+
+        public Piece Piece
+        {
+            get; private set;
+        }
+
+        public Move GetMove(IGrid grid)
+        {
+            var moves = _moveGetter.GetEmptySquares(grid).ToArray();
+            return new Move(moves.First(), Piece);
         }
     }
 }

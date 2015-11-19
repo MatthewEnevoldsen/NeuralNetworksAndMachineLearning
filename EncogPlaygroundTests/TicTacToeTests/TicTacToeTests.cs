@@ -127,7 +127,7 @@ namespace EncogPlaygroundTests.TicTacToeTests
             }
         }
 
-        private static IMock<IGrid> GetMockedGrid(IEnumerable<Point> xs, IEnumerable<Point> os)
+        private static Mock<IGrid> GetMockedGrid(IEnumerable<Point> xs, IEnumerable<Point> os)
         {
             var grid = new Mock<IGrid>();
             grid.SetupGet(g => g.Size).Returns(3);
@@ -201,13 +201,46 @@ namespace EncogPlaygroundTests.TicTacToeTests
             }
 
             [TestMethod]
-            public void RequireAllTilesToBeFilled()
+            public void AllTilesFilledIsTie()
             {
                 var grid = new Mock<IGrid>();
                 var tile = new Mock<ITile>();
                 tile.Setup(t => t.Content).Returns(Piece.X);
-                grid.Setup(g => g.GetEnumerator()).Returns(tile.Object);
+                grid.Setup(g => g.GetEnumerator()).Returns(Enumerable.Range(0, 9).Select(i => tile.Object).GetEnumerator());
                 Assert.IsTrue(GetDetector().IsGameTied(grid.Object));
+            }
+
+            [TestMethod]
+            public void EightTilesIsNotTie()
+            {
+                var grid = new Mock<IGrid>();
+                var tileX = new Mock<ITile>();
+                tileX.Setup(t => t.Content).Returns(Piece.X);
+                var emptyTile = new Mock<ITile>();
+                emptyTile.Setup(t => t.Content).Returns(TileContent.Empty);
+                grid.Setup(g => g.GetEnumerator()).Returns(Enumerable.Range(0, 8).Select(i => tileX.Object).Concat(new[] { emptyTile.Object }).GetEnumerator());
+                Assert.IsFalse(GetDetector().IsGameTied(grid.Object));
+            }
+        }
+        [TestClass]
+        public class TileFactoryShould
+        {
+            private ITileFactory GetFactory()
+            {
+                return new TileFactory<Tile>();
+            }
+
+            [TestMethod]
+            public void CreateTile()
+            {
+                Assert.AreNotEqual(null, GetFactory().Create());
+            }
+
+            [TestMethod]
+            public void CreateDifferentInstances()
+            {
+                var fact = GetFactory();
+                Assert.AreNotEqual(fact.Create(), fact.Create());
             }
         }
     }
