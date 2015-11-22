@@ -37,6 +37,11 @@ namespace TicTacToe
         {
             return InternalValue.GetHashCode();
         }
+
+        public override string ToString()
+        {
+            return this == Piece.X ? "X" : this == Piece.O ? "O" : "_";
+        }
     }
 }
 

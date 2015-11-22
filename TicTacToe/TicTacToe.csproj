@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="Game.cs" />
     <Compile Include="GameResults.cs" />
+    <Compile Include="GameRunner.cs" />
     <Compile Include="Grid.cs" />
     <Compile Include="IGame.cs" />
     <Compile Include="IGrid.cs" />
