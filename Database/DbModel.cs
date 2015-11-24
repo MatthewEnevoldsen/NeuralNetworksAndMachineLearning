@@ -35,6 +35,7 @@ namespace Database
         public int BatchSize { get; set; }
         public int Epochs { get; set; }
         public double Error { get; set; }
+        public int TrainingDataCount { get; set; }
         public int Good { get; set; }
         public int Bad { get; set; }
     }

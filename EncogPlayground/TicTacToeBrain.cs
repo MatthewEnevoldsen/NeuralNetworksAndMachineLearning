@@ -21,9 +21,9 @@ namespace EncogPlayground
     public class TicTacToeBrain
     {
         const int TotalGames = 10000;
-        const int TestDataCount = 20000;
+        const int TestDataCount = 1000;
         const int VerfDataCount = 10000;
-        const string Name = "BinaryInputsAndOutputs";
+        const string Name = "MoreLayers";
 
         public void CanItLearnTheRules()
         {
@@ -33,17 +33,25 @@ namespace EncogPlayground
 
             new GameRunner().RunGames(p1, p2, TotalGames);
 
-            var inputData = GetList(p2.AllMovesMade).Take(TestDataCount).ToList();
-            var verfData = GetList(p2.AllMovesMade).Skip(TestDataCount).Take(VerfDataCount).ToList();
+            var random = new Random(321);
+            var inputData = GetList(p2.AllMovesMade).ToList();
+            var randomNumbers = inputData.Select(r => random.Next()).ToArray();
+            inputData = inputData.Zip(randomNumbers, (r, o) => new { Result = r, Order = o })
+                .OrderBy(o => o.Order)
+                .Select(o => o.Result)
+                .ToList();
+
+            var verfData = inputData.Skip(TestDataCount).Take(VerfDataCount).ToList();
 
 
-            var hiddenLayerCounts = new[] { 1, 2, 3 };//, 5, 8, 13 };
-            var neuronCounts = new[] { 2, 3, 5, 8, 13, 21, 34, 55, 89, 150 };
-            var actFuncs = new IActivationFunction[] { new ActivationTANH(), new ActivationSIN(), new ActivationSigmoid(), new ActivationLinear() };
-            var learnRates = new[] { 0.1, 0.5, 0.7 };
-            var momentums = new[] { 0.1, 0.3, 0.5 };
+            var hiddenLayerCounts = new Sequences().FibbonacciLessThan(40);
+            var neuronCounts = new Sequences().FibbonacciLessThan(20);
+            var actFuncs = new IActivationFunction[] { new ActivationTANH(), new ActivationSigmoid() };
+            var learnRates = new[] { 0.1 };
+            var momentums = new[] { 0.3, 0.7 };
             var batchSizes = new[] { 1 };
-            var epochs = new[] { 1, 5, 10, 100, 500 };
+            var epochs = new Sequences().FibbonacciLessThan(60);
+            var trainingDataCount = new Sequences().PowersOf10(TestDataCount);
 
             var x = from hlc in hiddenLayerCounts
                     from nc in neuronCounts
@@ -52,24 +60,30 @@ namespace EncogPlayground
                     from mom in momentums
                     from bat in batchSizes
                     from epoch in epochs
-                    select new { hlc, nc, af, lr, mom, bat, epoch };
-
-            x.AsParallel().ForAll(param => CanItLearnRulesWith(inputData, verfData, param.hlc, param.nc, param.af, param.lr, param.mom, param.bat, param.epoch));
+                    from tdc in trainingDataCount
+                    select new { hlc, nc, af, lr, mom, bat, epoch, tdc };
+            Console.WriteLine(x.Count());
+            x.AsParallel().ForAll(param => CanItLearnRulesWith(inputData.Take(param.tdc).ToList(), verfData, param.hlc, param.nc, param.af, param.lr, param.mom, param.bat, param.epoch));
 
 
         }
+
+
 
         private void CanItLearnRulesWith(IList<IMLDataPair> inputData, IList<IMLDataPair> verfData, int hiddenLayerCount, int neuronCount, IActivationFunction actFunc, double learnRate, double momentum, int batchSize, int maxEpochs)
         {
             var model = new DbModel();
             var funcName = actFunc.GetType().Name;
+            var tdCount = inputData.Count();
             if (model.TicTacToeResult.Any(r => r.HiddenLayerCount == hiddenLayerCount &&
                 r.NeuronPerLayercount == neuronCount &&
                 r.ActivationFunction == funcName &&
                 r.LearningRate == learnRate &&
                 r.BatchSize == batchSize &&
                 r.Momentum == momentum &&
-                r.Name == Name))
+                r.Name == Name &&
+                r.Epochs == maxEpochs &&
+                r.TrainingDataCount == tdCount))
                 return;
 
             var nn = CreateNetwork(inputData, hiddenLayerCount, neuronCount, actFunc);
@@ -92,6 +106,7 @@ namespace EncogPlayground
                 ActivationFunction = funcName,
                 Bad = bad,
                 Good = good,
+                TrainingDataCount = tdCount,
                 Momentum = momentum,
                 LearningRate = learnRate,
                 BatchSize = batchSize,
