@@ -21,7 +21,9 @@ namespace EncogPlayground
     public class TicTacToeBrain
     {
         const int TotalGames = 10000;
-        const int TestDataCount = 9000;
+        const int TestDataCount = 20000;
+        const int VerfDataCount = 10000;
+        const string Name = "BinaryInputsAndOutputs";
 
         public void CanItLearnTheRules()
         {
@@ -32,16 +34,16 @@ namespace EncogPlayground
             new GameRunner().RunGames(p1, p2, TotalGames);
 
             var inputData = GetList(p2.AllMovesMade).Take(TestDataCount).ToList();
-            var verfData = GetList(p2.AllMovesMade).ToList();
+            var verfData = GetList(p2.AllMovesMade).Skip(TestDataCount).Take(VerfDataCount).ToList();
 
 
-            var hiddenLayerCounts = new[] { 1, 2, 3, 5, 8, 13 };
+            var hiddenLayerCounts = new[] { 1, 2, 3 };//, 5, 8, 13 };
             var neuronCounts = new[] { 2, 3, 5, 8, 13, 21, 34, 55, 89, 150 };
             var actFuncs = new IActivationFunction[] { new ActivationTANH(), new ActivationSIN(), new ActivationSigmoid(), new ActivationLinear() };
             var learnRates = new[] { 0.1, 0.5, 0.7 };
             var momentums = new[] { 0.1, 0.3, 0.5 };
             var batchSizes = new[] { 1 };
-            var epochs = new[] { 1, 10, 100, 1000, 5000 };//will be /nc/hlc
+            var epochs = new[] { 1, 5, 10, 100, 500 };
 
             var x = from hlc in hiddenLayerCounts
                     from nc in neuronCounts
@@ -59,6 +61,17 @@ namespace EncogPlayground
 
         private void CanItLearnRulesWith(IList<IMLDataPair> inputData, IList<IMLDataPair> verfData, int hiddenLayerCount, int neuronCount, IActivationFunction actFunc, double learnRate, double momentum, int batchSize, int maxEpochs)
         {
+            var model = new DbModel();
+            var funcName = actFunc.GetType().Name;
+            if (model.TicTacToeResult.Any(r => r.HiddenLayerCount == hiddenLayerCount &&
+                r.NeuronPerLayercount == neuronCount &&
+                r.ActivationFunction == funcName &&
+                r.LearningRate == learnRate &&
+                r.BatchSize == batchSize &&
+                r.Momentum == momentum &&
+                r.Name == Name))
+                return;
+
             var nn = CreateNetwork(inputData, hiddenLayerCount, neuronCount, actFunc);
             var train = new Backpropagation(nn, new BasicMLDataSet(inputData), learnRate, momentum);
             train.BatchSize = batchSize;
@@ -67,25 +80,25 @@ namespace EncogPlayground
             {
                 train.Iteration();
                 epoch++;
-            } while (train.Error > 0.001 && epoch < maxEpochs / neuronCount / hiddenLayerCount);
+            } while (epoch < maxEpochs);
 
-            int good = verfData.Count(verf => Enumerable.Range(0, 9).All(i => Math.Round(nn.Compute(verf.Input)[i]) == Math.Round(verf.Ideal[i])));
-            int bad = TotalGames - good;
+            int good = verfData.Count(verf => { var output = nn.Compute(verf.Input); return Enumerable.Range(0, 9).All(i => Math.Round(output[i]) == Math.Round(verf.Ideal[i])); });
+            int bad = VerfDataCount - good;
 
             var result = new TicTacToeResult()
             {
                 HiddenLayerCount = hiddenLayerCount,
                 NeuronPerLayercount = neuronCount,
-                ActivationFunction = actFunc.GetType().Name,
+                ActivationFunction = funcName,
                 Bad = bad,
                 Good = good,
+                Momentum = momentum,
                 LearningRate = learnRate,
                 BatchSize = batchSize,
                 Epochs = epoch,
                 Error = train.Error,
-                Name = "BinaryInputsAndOutputs",
+                Name = Name,
             };
-            var model = new DbModel();
 
             model.TicTacToeResult.Add(result);
             model.SaveChanges();
