@@ -14,45 +14,25 @@ using System.Drawing;
 using System.Threading;
 using System.IO;
 using System.Diagnostics;
+using Database;
 
 namespace EncogPlayground
 {
-    public class TicTacToeBrain : IPlayer
+    public class TicTacToeBrain
     {
-        public string Name
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public Piece Piece
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public Move GetMove(IGrid grid)
-        {
-            throw new NotImplementedException();
-        }
-        static object sync = new object();
-
+        const int TotalGames = 10000;
+        const int TestDataCount = 9000;
 
         public void CanItLearnTheRules()
         {
 
-
             var p1 = new RecordingPlayer1801s(new RandomPlayer("first", Piece.X, new ValidMoveGetter()));
             var p2 = new RecordingPlayer1801s(new FirstPlayer("second", Piece.O, new ValidMoveGetter()));
 
-            new GameRunner().RunGames(p1, p2, 10000);
+            new GameRunner().RunGames(p1, p2, TotalGames);
 
-            var inputData = GetList(p2.AllMovesMade).Take(9000).ToList();
-            var verfData = GetList(p2.AllMovesMade).Take(10000).ToList();
+            var inputData = GetList(p2.AllMovesMade).Take(TestDataCount).ToList();
+            var verfData = GetList(p2.AllMovesMade).ToList();
 
 
             var hiddenLayerCounts = new[] { 1, 2, 3, 5, 8, 13 };
@@ -63,65 +43,24 @@ namespace EncogPlayground
             var batchSizes = new[] { 1 };
             var epochs = new[] { 1, 10, 100, 1000, 5000 };//will be /nc/hlc
 
-            using (var stream = new StreamWriter(File.Create(@"C:\Users\matte\Desktop\Results\doubleInputs.txt")))
-            {
+            var x = from hlc in hiddenLayerCounts
+                    from nc in neuronCounts
+                    from af in actFuncs
+                    from lr in learnRates
+                    from mom in momentums
+                    from bat in batchSizes
+                    from epoch in epochs
+                    select new { hlc, nc, af, lr, mom, bat, epoch };
 
+            x.AsParallel().ForAll(param => CanItLearnRulesWith(inputData, verfData, param.hlc, param.nc, param.af, param.lr, param.mom, param.bat, param.epoch));
 
-                var par1 = Parallel.ForEach(hiddenLayerCounts, hlc =>
-                 {
-                     var par2 = Parallel.ForEach(neuronCounts, nc =>
-                     {
-                         var p3 = Parallel.ForEach(actFuncs, af =>
-                         {
-                             var p4 = Parallel.ForEach(learnRates, lr =>
-                             {
-                                 var p5 = Parallel.ForEach(momentums, mom =>
-                                 {
-                                     var p6 = Parallel.ForEach(batchSizes, bat =>
-                                     {
-                                         var p7 = Parallel.ForEach(epochs, maxEpoch =>
-                                         {
-                                             CanItLearnRulesWith(inputData, verfData, hlc, nc, af, lr, mom, bat, maxEpoch, stream);
-                                         });
-                                         while (!p7.IsCompleted)
-                                             Thread.Sleep(10000);
-                                     });
-                                     while (!p6.IsCompleted)
-                                         Thread.Sleep(10000);
-                                 });
-                                 while (!p5.IsCompleted)
-                                     Thread.Sleep(10000);
-                             });
-                             while (!p4.IsCompleted)
-                                 Thread.Sleep(10000);
-                         });
-                         while (!p3.IsCompleted)
-                             Thread.Sleep(10000);
-                     });
-                     while (!par2.IsCompleted)
-                         Thread.Sleep(10000);
-                 });
-                while (!par1.IsCompleted)
-                    Thread.Sleep(10000);
-            }
-
-            Console.Read();
 
         }
 
-        private void CanItLearnRulesWith(IList<IMLDataPair> inputData, IList<IMLDataPair> verfData, int hiddenLayerCount, int neuronCount, IActivationFunction actFunc, double learnRate, double momentum, int batchSize, int maxEpochs, StreamWriter writer)
+        private void CanItLearnRulesWith(IList<IMLDataPair> inputData, IList<IMLDataPair> verfData, int hiddenLayerCount, int neuronCount, IActivationFunction actFunc, double learnRate, double momentum, int batchSize, int maxEpochs)
         {
-            var nn = new BasicNetwork();
-            nn.AddLayer(new BasicLayer(new ActivationTANH(), false, inputData.First().Input.Count));//input the grid contents
-            for (int j = 0; j < hiddenLayerCount; j++)
-                nn.AddLayer(new BasicLayer(actFunc, true, neuronCount));
-            nn.AddLayer(new BasicLayer(new ActivationTANH(), false, 9));//next square to put a piece 
-            nn.Structure.FinalizeStructure();
-            nn.Reset();
-
-            var dataSet = new BasicMLDataSet(inputData);
-
-            var train = new Backpropagation(nn, dataSet, learnRate, momentum);
+            var nn = CreateNetwork(inputData, hiddenLayerCount, neuronCount, actFunc);
+            var train = new Backpropagation(nn, new BasicMLDataSet(inputData), learnRate, momentum);
             train.BatchSize = batchSize;
             int epoch = 1;
             do
@@ -130,21 +69,39 @@ namespace EncogPlayground
                 epoch++;
             } while (train.Error > 0.001 && epoch < maxEpochs / neuronCount / hiddenLayerCount);
 
-            int good = 0;
-            int bad = 0;
-            foreach (var verf in verfData)
+            int good = verfData.Count(verf => Enumerable.Range(0, 9).All(i => Math.Round(nn.Compute(verf.Input)[i]) == Math.Round(verf.Ideal[i])));
+            int bad = TotalGames - good;
+
+            var result = new TicTacToeResult()
             {
-                var output = nn.Compute(verf.Input);
-                if (Enumerable.Range(0, 9).All(i => Math.Round(output[i]) == Math.Round(verf.Ideal[i])))
-                    good++;
-                else
-                    bad++;
-            }
-            lock (sync)
-            {
-                writer.WriteLine("{{hlc: {0}, nc: {1}, af: {2}, lr: {3}, mom: {4}, batch: {5},epochs: {6}, error: {7},  good: {8}, bad {9}}}", hiddenLayerCount, neuronCount, actFunc.GetType().Name, learnRate, momentum, batchSize, epoch, train.Error, good, bad);
-                writer.Flush();
-            }
+                HiddenLayerCount = hiddenLayerCount,
+                NeuronPerLayercount = neuronCount,
+                ActivationFunction = actFunc.GetType().Name,
+                Bad = bad,
+                Good = good,
+                LearningRate = learnRate,
+                BatchSize = batchSize,
+                Epochs = epoch,
+                Error = train.Error,
+                Name = "BinaryInputsAndOutputs",
+            };
+            var model = new DbModel();
+
+            model.TicTacToeResult.Add(result);
+            model.SaveChanges();
+
+        }
+
+        private static BasicNetwork CreateNetwork(IList<IMLDataPair> inputData, int hiddenLayerCount, int neuronCount, IActivationFunction actFunc)
+        {
+            var nn = new BasicNetwork();
+            nn.AddLayer(new BasicLayer(new ActivationTANH(), false, inputData.First().Input.Count));//input the grid contents
+            for (int j = 0; j < hiddenLayerCount; j++)
+                nn.AddLayer(new BasicLayer(actFunc, true, neuronCount));
+            nn.AddLayer(new BasicLayer(new ActivationTANH(), false, 9));//next square to put a piece 
+            nn.Structure.FinalizeStructure();
+            nn.Reset();
+            return nn;
         }
 
         private IList<IMLDataPair> GetList(IEnumerable<Tuple<int[,], Point>> input)
