@@ -39,10 +39,12 @@ namespace EncogPlayground
         {
             throw new NotImplementedException();
         }
+        static object sync = new object();
 
 
         public void CanItLearnTheRules()
         {
+
 
             var p1 = new RecordingPlayer1801s(new RandomPlayer("first", Piece.X, new ValidMoveGetter()));
             var p2 = new RecordingPlayer1801s(new FirstPlayer("second", Piece.O, new ValidMoveGetter()));
@@ -50,54 +52,64 @@ namespace EncogPlayground
             new GameRunner().RunGames(p1, p2, 10000);
 
             var inputData = GetList(p2.AllMovesMade).Take(9000).ToList();
-            var verfData = GetList(p2.AllMovesMade).Skip(9000).Take(1000).ToList();
+            var verfData = GetList(p2.AllMovesMade).Take(10000).ToList();
 
 
-            var hiddenLayerCounts = new[] { 1, 2, 3, 5, 8, 13, 21, 34 };
-            var neuronCounts = new[] { 2, 3, 5, 8, 13, 21, 34 };
+            var hiddenLayerCounts = new[] { 1, 2, 3, 5, 8, 13 };
+            var neuronCounts = new[] { 2, 3, 5, 8, 13, 21, 34, 55, 89, 150 };
             var actFuncs = new IActivationFunction[] { new ActivationTANH(), new ActivationSIN(), new ActivationSigmoid(), new ActivationLinear() };
-            var learnRates = new[] { 0.1, 0.3, 0.7 };
+            var learnRates = new[] { 0.1, 0.5, 0.7 };
             var momentums = new[] { 0.1, 0.3, 0.5 };
             var batchSizes = new[] { 1 };
+            var epochs = new[] { 1, 10, 100, 1000, 5000 };//will be /nc/hlc
 
-            var par1 = Parallel.ForEach(hiddenLayerCounts, hlc =>
-             {
-                 var par2 = Parallel.ForEach(neuronCounts, nc =>
+            using (var stream = new StreamWriter(File.Create(@"C:\Users\matte\Desktop\Results\doubleInputs.txt")))
+            {
+
+
+                var par1 = Parallel.ForEach(hiddenLayerCounts, hlc =>
                  {
-                     var p3 = Parallel.ForEach(actFuncs, af =>
+                     var par2 = Parallel.ForEach(neuronCounts, nc =>
                      {
-                         var p4 = Parallel.ForEach(learnRates, lr =>
+                         var p3 = Parallel.ForEach(actFuncs, af =>
                          {
-                             var p5 = Parallel.ForEach(momentums, mom =>
+                             var p4 = Parallel.ForEach(learnRates, lr =>
                              {
-                                 var p6 = Parallel.ForEach(batchSizes, bat =>
+                                 var p5 = Parallel.ForEach(momentums, mom =>
                                  {
-                                     CanItLearnRulesWith(inputData, verfData, hlc, nc, af, lr, mom, bat);
-
+                                     var p6 = Parallel.ForEach(batchSizes, bat =>
+                                     {
+                                         var p7 = Parallel.ForEach(epochs, maxEpoch =>
+                                         {
+                                             CanItLearnRulesWith(inputData, verfData, hlc, nc, af, lr, mom, bat, maxEpoch, stream);
+                                         });
+                                         while (!p7.IsCompleted)
+                                             Thread.Sleep(10000);
+                                     });
+                                     while (!p6.IsCompleted)
+                                         Thread.Sleep(10000);
                                  });
-                                 while (!p6.IsCompleted)
+                                 while (!p5.IsCompleted)
                                      Thread.Sleep(10000);
                              });
-                             while (!p5.IsCompleted)
+                             while (!p4.IsCompleted)
                                  Thread.Sleep(10000);
                          });
-                         while (!p4.IsCompleted)
+                         while (!p3.IsCompleted)
                              Thread.Sleep(10000);
                      });
-                     while (!p3.IsCompleted)
+                     while (!par2.IsCompleted)
                          Thread.Sleep(10000);
                  });
-                 while (!par2.IsCompleted)
-                     Thread.Sleep(10000);
-             });
-            while (!par1.IsCompleted)
-                Thread.Sleep(10000);
+                while (!par1.IsCompleted)
+                    Thread.Sleep(10000);
+            }
 
             Console.Read();
 
         }
 
-        private void CanItLearnRulesWith(IList<IMLDataPair> inputData, IList<IMLDataPair> verfData, int hiddenLayerCount, int neuronCount, IActivationFunction actFunc, double learnRate, double momentum, int batchSize)
+        private void CanItLearnRulesWith(IList<IMLDataPair> inputData, IList<IMLDataPair> verfData, int hiddenLayerCount, int neuronCount, IActivationFunction actFunc, double learnRate, double momentum, int batchSize, int maxEpochs, StreamWriter writer)
         {
             var nn = new BasicNetwork();
             nn.AddLayer(new BasicLayer(new ActivationTANH(), false, inputData.First().Input.Count));//input the grid contents
@@ -112,22 +124,11 @@ namespace EncogPlayground
             var train = new Backpropagation(nn, dataSet, learnRate, momentum);
             train.BatchSize = batchSize;
             int epoch = 1;
-            var sb = new StringBuilder();
-            var fileName = " hlc " + hiddenLayerCount + " nc " + neuronCount + " af " + actFunc.GetType().ToString() + " lr " + learnRate + " mom " + momentum + "batch " + batchSize;
-            sb.AppendLine("hlc: " + hiddenLayerCount + ",");
-            sb.AppendLine("nc: " + neuronCount + ",");
-            sb.AppendLine("af: " + actFunc.GetType().ToString() + ",");
-            sb.AppendLine("lr: " + learnRate + ",");
-            sb.AppendLine("mom: " + momentum + ",");
-            sb.AppendLine("batch: " + batchSize + ",");
             do
             {
                 train.Iteration();
                 epoch++;
-            } while (train.Error > 0.01 && epoch < 1000 / neuronCount / hiddenLayerCount);
-            sb.AppendLine("Epoch: " + epoch);
-            sb.AppendLine("Error: " + train.Error);
-
+            } while (train.Error > 0.001 && epoch < maxEpochs / neuronCount / hiddenLayerCount);
 
             int good = 0;
             int bad = 0;
@@ -139,10 +140,11 @@ namespace EncogPlayground
                 else
                     bad++;
             }
-            sb.AppendLine(string.Format("Good: {0}, Bad: {1} ", good, bad));
-            var path = @"C:\Users\matte\Desktop\Results\UsingJustBinaryInputs\" + fileName + ".txt";
-            if (good > 900)
-                File.WriteAllText(path, "{" + sb.ToString() + "}");
+            lock (sync)
+            {
+                writer.WriteLine("{{hlc: {0}, nc: {1}, af: {2}, lr: {3}, mom: {4}, batch: {5},epochs: {6}, error: {7},  good: {8}, bad {9}}}", hiddenLayerCount, neuronCount, actFunc.GetType().Name, learnRate, momentum, batchSize, epoch, train.Error, good, bad);
+                writer.Flush();
+            }
         }
 
         private IList<IMLDataPair> GetList(IEnumerable<Tuple<int[,], Point>> input)
