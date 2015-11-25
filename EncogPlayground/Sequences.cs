@@ -8,25 +8,27 @@ namespace EncogPlayground
 {
     public class Sequences
     {
-        public IEnumerable<int> FibbonacciLessThan(int max)
+        public IEnumerable<int> Fibbonacci(int min, int max)
         {
             int prev = 1;
             int current = 1;
             while (current <= max)
             {
-                yield return current;
+                if (current >= min)
+                    yield return current;
                 var temp = current;
                 current += prev;
                 prev = temp;
             }
         }
 
-        public IEnumerable<int> PowersOf10(int max)
+        public IEnumerable<int> PowersOf10(int min, int max)
         {
             int current = 1;
-            while(current <= max)
+            while (current <= max)
             {
-                yield return current;
+                if (current >= min)
+                    yield return current;
                 current *= 10;
             }
         }

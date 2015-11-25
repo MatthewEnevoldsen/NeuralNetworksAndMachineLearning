@@ -44,28 +44,26 @@ namespace EncogPlayground
             var verfData = inputData.Skip(TestDataCount).Take(VerfDataCount).ToList();
 
 
-            var hiddenLayerCounts = new Sequences().FibbonacciLessThan(40);
-            var neuronCounts = new Sequences().FibbonacciLessThan(20);
-            var actFuncs = new IActivationFunction[] { new ActivationTANH(), new ActivationSigmoid() };
+            var hiddenLayerCounts = new Sequences().Fibbonacci(1, 20);
+            var neuronCounts = new Sequences().Fibbonacci(10, 60);
+            var actFuncs = new IActivationFunction[] { new ActivationTANH() };
             var learnRates = new[] { 0.1 };
-            var momentums = new[] { 0.3, 0.7 };
+            var momentums = new[] { 0.3 };
             var batchSizes = new[] { 1 };
-            var epochs = new Sequences().FibbonacciLessThan(60);
-            var trainingDataCount = new Sequences().PowersOf10(TestDataCount);
+            var epochs = new Sequences().Fibbonacci(100, 500);
+            var trainingDataCount = new Sequences().PowersOf10(100, TestDataCount);
 
-            var x = from hlc in hiddenLayerCounts
-                    from nc in neuronCounts
-                    from af in actFuncs
-                    from lr in learnRates
-                    from mom in momentums
-                    from bat in batchSizes
-                    from epoch in epochs
-                    from tdc in trainingDataCount
-                    select new { hlc, nc, af, lr, mom, bat, epoch, tdc };
-            Console.WriteLine(x.Count());
-            x.AsParallel().ForAll(param => CanItLearnRulesWith(inputData.Take(param.tdc).ToList(), verfData, param.hlc, param.nc, param.af, param.lr, param.mom, param.bat, param.epoch));
-
-
+            var paramSets = from hlc in hiddenLayerCounts
+                            from nc in neuronCounts
+                            from af in actFuncs
+                            from lr in learnRates
+                            from mom in momentums
+                            from bat in batchSizes
+                            from epoch in epochs
+                            from tdc in trainingDataCount
+                            select new { hlc, nc, af, lr, mom, bat, epoch, tdc };
+            Console.WriteLine(paramSets.Count());
+            paramSets.AsParallel().ForAll(param => CanItLearnRulesWith(inputData.Take(param.tdc).ToList(), verfData, param.hlc, param.nc, param.af, param.lr, param.mom, param.bat, param.epoch));
         }
 
 
