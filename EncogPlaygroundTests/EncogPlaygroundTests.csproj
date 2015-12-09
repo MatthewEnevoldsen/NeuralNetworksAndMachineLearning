@@ -57,6 +57,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="BaynesianPlayground.cs" />
     <Compile Include="Tests\UnitTest1.cs" />
     <Compile Include="TicTacToeTests\TicTacToeTests.cs" />
     <Compile Include="UnitTest1.cs" />
@@ -70,6 +71,10 @@
     <ProjectReference Include="..\TicTacToe\TicTacToe.csproj">
       <Project>{2a82620a-ed85-42ae-a9e7-dda9cda9cb3f}</Project>
       <Name>TicTacToe</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\menevoldsen\Source\Repos\encog-dotnet-core\encog-core-cs\encog-core-cs.csproj">
+      <Project>{ac6fadf9-0904-4ebd-b22c-1c787c7e7a95}</Project>
+      <Name>encog-core-cs</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

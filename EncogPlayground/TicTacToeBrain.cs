@@ -46,7 +46,7 @@ namespace EncogPlayground
 
             var hiddenLayerCounts = new Sequences().FibbonacciLessThan(40);
             var neuronCounts = new Sequences().FibbonacciLessThan(20);
-            var actFuncs = new IActivationFunction[] { new ActivationTANH(), new ActivationSigmoid() };
+            var actFuncs = new IActivationFunction[] { new ActivationTANH() };
             var learnRates = new[] { 0.1 };
             var momentums = new[] { 0.3, 0.7 };
             var batchSizes = new[] { 1 };
